@@ -1,0 +1,53 @@
+\documentclass{article}
+\usepackage[margin=1in]{geometry}
+\usepackage{hyperref}
+
+\title{Problem Set 4}
+\author{Yeyang Zhou}
+\date{\today}
+
+\begin{document}
+\maketitle
+
+\section{Data Sources of Interest}
+
+I am interested in scraping data from several sources. First, SEC EDGAR provides 
+freely accessible 10-K and 10-Q filings, which are valuable for empirical accounting 
+research on corporate disclosures. Second, the Federal Reserve Economic Data (FRED) 
+API offers macroeconomic time series data including GDP, inflation, and interest rates, 
+which are useful for finance research. Third, RavenPack and similar news analytics 
+platforms provide event-driven datasets that can be used to study market reactions 
+to corporate announcements such as layoffs or earnings surprises.
+
+\section{Exercise 5 Answers}
+
+\subsection{Class of mydf and mydf\$date}
+The object \texttt{mydf} is of class \texttt{tbl\_df}, \texttt{tbl}, and 
+\texttt{data.frame}. The column \texttt{mydf\$date} is of class \texttt{character}. 
+This is because JSON stores all values as strings by default, so the date column 
+is not automatically parsed into a native \texttt{Date} object.
+
+\subsection{First 6 Rows of mydf}
+The first 6 rows of \texttt{mydf} all have date value of 1 (year 1 AD), with 
+descriptions of historical events from the Roman Empire and Asia, along with 
+language, category, and granularity information.
+
+\section{Exercise 6 Answers}
+
+\subsection{Class of df1 and df}
+\texttt{df1} is of class \texttt{tbl\_df}, \texttt{tbl}, and \texttt{data.frame}, 
+stored in R memory. \texttt{df} would be of class \texttt{tbl\_spark}, which is 
+a reference to a distributed dataset in Spark rather than a local R object.
+
+\subsection{Column Name Differences}
+The column names differ between the two objects. R allows dots in column names 
+(e.g., \texttt{Sepal.Length}), but Spark and SQL do not support dots in column names. 
+Therefore, when copying to Spark, \texttt{sparklyr} automatically converts dots 
+to underscores (e.g., \texttt{Sepal\_Length}).
+
+\subsection{Note on sparklyr Installation}
+The \texttt{sparklyr} package was not available for R version 4.0.2 on OSCER, 
+so the Spark exercises could not be executed. The code is written in 
+\texttt{PS4b\_Zhou.R} based on the assignment instructions.
+
+\end{document}
