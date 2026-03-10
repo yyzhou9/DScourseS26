@@ -1,0 +1,136 @@
+\documentclass[12pt]{article}
+\usepackage[margin=1in]{geometry}
+\usepackage{booktabs}
+\usepackage{hyperref}
+\usepackage{parskip}
+\usepackage{amsmath}
+
+\title{Problem Set 5: Web Data Aggregation\\
+       \large Econ 5253 --- Spring 2026}
+\author{Yeyang Zhou}
+\date{March 10, 2026}
+
+\begin{document}
+\maketitle
+
+% ──────────────────────────────────────────────
+\section{Task 1: Web Scraping --- BLS Mass Layoffs Statistics}
+% ──────────────────────────────────────────────
+
+\subsection*{Data Source}
+
+The data were scraped from the Bureau of Labor Statistics (BLS) Extended Mass
+Layoffs Statistics release page:
+\begin{center}
+\url{https://www.bls.gov/news.release/mslo.t01.htm}
+\end{center}
+This page presents a summary table of mass layoff events, the number of initial
+unemployment insurance (UI) claimants, and related industry breakdowns. The table
+is published as static HTML with no public API endpoint, making it a natural
+target for \texttt{BeautifulSoup}-based scraping.
+
+\subsection*{Scraping Procedure}
+
+The script \texttt{PS5\_Zhou.py} uses Python's \texttt{requests} library to
+fetch the page and \texttt{BeautifulSoup} (from the \texttt{bs4} package) to
+parse the HTML. The relevant table is identified by its CSS class
+\texttt{"regular"}, which BLS uses consistently across its statistical release
+pages. Each \texttt{<tr>} element is iterated to extract cell text, and the
+result is assembled into a \texttt{pandas} DataFrame and exported as a CSV.
+
+I did not rely on external tutorials beyond the official BeautifulSoup
+documentation (\url{https://www.crummy.com/software/BeautifulSoup/bs4/doc/})
+and the BLS website's own HTML source inspection.
+
+\subsection*{Why This Data Is Relevant}
+
+My current research focuses on labor economics topics in accounting, particularly
+the stock market and accounting consequences of mass layoff announcements. The BLS
+Extended Mass Layoffs program directly measures the events I study: employer-initiated
+separations of 50 or more workers from a single establishment over a five-week
+period. Having a clean, programmatically-updated version of this table is directly
+useful for:
+\begin{itemize}
+    \item Benchmarking the time-series distribution of mass layoff events against
+          the RavenPack news-based layoff sample I use in my event study.
+    \item Identifying macroeconomic periods of elevated layoff activity (e.g.,
+          the 2001 recession, the 2008--2009 financial crisis, and the 2020
+          COVID shock) as controls or subperiod filters in panel regressions.
+    \item Providing descriptive context for the introduction and motivation
+          sections of my seminar paper.
+\end{itemize}
+
+% ──────────────────────────────────────────────
+\section{Task 2: BLS Public Data API v2}
+% ──────────────────────────────────────────────
+
+\subsection*{API and Series}
+
+The BLS provides a free, unauthenticated REST API (v2) at
+\begin{center}
+\url{https://api.bls.gov/publicAPI/v2/timeseries/data/}
+\end{center}
+I queried two series from 2000 through 2024:
+\begin{enumerate}
+    \item \textbf{LNS14000000} --- Unemployment Rate, seasonally adjusted
+          (Current Population Survey).
+    \item \textbf{JTS000000000000000LDR} --- Layoffs and Discharges Rate,
+          Total Nonfarm, seasonally adjusted (Job Openings and Labor Turnover
+          Survey, JOLTS).
+\end{enumerate}
+No registration key is required for the public API tier. Requests are sent as
+JSON \texttt{POST} payloads. The \texttt{calculations} flag was set to
+\texttt{true} to retrieve month-over-month changes alongside levels.
+
+\subsection*{Selected Findings}
+
+Table~\ref{tab:annual} reports annual averages of both series for selected years.
+
+\begin{table}[h]
+\centering
+\caption{Annual Average Unemployment Rate and Layoffs \& Discharges Rate,
+         Selected Years (2000--2024)}
+\label{tab:annual}
+\begin{tabular}{lcc}
+\toprule
+Year & Unemployment Rate (\%) & Layoffs \& Discharges Rate (\%) \\
+\midrule
+2000 &  4.0 & 1.3 \\
+2001 &  4.7 & 1.6 \\
+2002 &  5.8 & 1.5 \\
+2007 &  4.6 & 1.3 \\
+2008 &  5.8 & 1.5 \\
+2009 &  9.3 & 1.8 \\
+2010 &  9.6 & 1.5 \\
+2019 &  3.7 & 1.2 \\
+2020 &  8.1 & 2.2 \\
+2021 &  5.4 & 1.0 \\
+2022 &  3.6 & 1.0 \\
+2023 &  3.6 & 1.1 \\
+2024 &  4.0 & 1.1 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+Several patterns stand out. First, the layoffs and discharges rate spiked most
+sharply in April 2020 (reaching approximately 7.6\%), reflecting the sudden,
+pandemic-induced employment separation wave---a period qualitatively different
+from the more gradual recessionary layoff cycles of 2001--2002 and 2008--2009.
+Second, despite a historically low unemployment rate in 2022--2023 (around
+3.6\%), the layoffs rate remained modest, consistent with tight labor market
+conditions limiting employer separations. Third, the positive unconditional
+correlation between the two series over the full sample (the unemployment rate
+tends to rise following periods of elevated layoffs) aligns with the labor
+market dynamics documented in Blanchard and Diamond (1990) and motivates the
+use of macro controls in layoff-announcement event studies.
+
+\subsection*{Packages Used}
+
+\begin{itemize}
+    \item \texttt{requests} --- HTTP requests for both scraping and API calls.
+    \item \texttt{beautifulsoup4} (\texttt{bs4}) --- HTML parsing for Task 1.
+    \item \texttt{pandas} --- Data manipulation and CSV export.
+    \item \texttt{json} --- Serialization of API request payload.
+\end{itemize}
+
+\end{document}
