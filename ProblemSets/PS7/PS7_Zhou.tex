@@ -1,0 +1,156 @@
+\documentclass[12pt]{article}
+\usepackage[margin=1in]{geometry}
+\usepackage{booktabs}
+\usepackage{amsmath}
+\usepackage{hyperref}
+\usepackage{setspace}
+\onehalfspacing
+
+\title{Problem Set 7 \\ \large Econ 5253 --- Spring 2026}
+\author{Yeyang Zhou}
+\date{March 31, 2026}
+
+\begin{document}
+\maketitle
+
+\section*{Question 5: Dropping Missing Observations}
+
+After loading \texttt{wages.csv} (2,246 observations), we drop all rows
+where either \texttt{hgc} or \texttt{tenure} is missing (17 observations
+total), leaving \textbf{2,229 observations} for analysis.
+
+\section*{Question 6: Summary Statistics and Missing Data Discussion}
+
+Table~\ref{tab:summary} presents summary statistics for the cleaned sample.
+
+\begin{table}[ht]
+\centering
+\caption{Summary Statistics ($N = 2{,}229$)}
+\label{tab:summary}
+\begin{tabular}{lrrrrr}
+\toprule
+ & Count & Mean & Std.\ Dev. & Min & Max \\
+\midrule
+logwage & 1669   & 1.6252  & 0.3855 & 0.0049 & 2.2615 \\
+hgc     & 2229   & 13.1014 & 2.5243 & 0.0000 & 18.0000 \\
+college & 2229   & 0.2378  & 0.4258 & 0 & 1 \\
+tenure  & 2229   & 5.9706  & 5.5072 & 0.0000 & 25.9167 \\
+age     & 2229   & 39.1516 & 3.0620 & 34.0000 & 46.0000 \\
+married & 2229   & 0.6420  & 0.4795 & 0 & 1 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\noindent\textbf{Missing rate for \texttt{logwage}:}
+Of the 2,229 observations, 560 have missing log wages, for a missing
+rate of \textbf{25.1\%}.
+
+\medskip
+\noindent\textbf{MCAR, MAR, or MNAR?}
+The \texttt{logwage} variable is most likely \textbf{Missing Not at
+Random (MNAR)}. Women with lower wages---e.g.\ those in informal or
+part-time employment---are less likely to have their wages recorded.
+This means the probability of missingness is correlated with the
+unobserved value of \texttt{logwage} itself, which rules out both
+MCAR (missingness independent of all data) and MAR (missingness
+dependent only on observed covariates).
+
+\section*{Question 7: Imputation Methods and Regression Results}
+
+We estimate the following model under four imputation strategies:
+\begin{equation}
+\log w_i = \beta_0 + \beta_1\,\text{hgc}_i + \beta_2\,\text{college}_i
+         + \beta_3\,\text{tenure}_i + \beta_4\,\text{tenure}_i^2
+         + \beta_5\,\text{age}_i + \beta_6\,\text{married}_i + \varepsilon_i
+\end{equation}
+
+The four methods are: (1) \textbf{complete cases} (listwise deletion,
+assumes MCAR); (2) \textbf{mean imputation} (replace missing
+\texttt{logwage} with the sample mean); (3) \textbf{predicted value
+imputation} (impute using fitted values from the complete-cases
+regression, consistent with MAR); and (4) \textbf{multiple imputation}
+(5 imputed datasets with added residual noise, pooled via Rubin's rules).
+
+Table~\ref{tab:regression} presents all four sets of estimates.
+The true value of $\beta_1 = 0.093$.
+
+\begin{table}[ht]
+\centering
+\caption{Returns to Schooling under Alternative Imputation Methods}
+\label{tab:regression}
+\begin{tabular}{lllll}
+\hline
+               & Complete   & Mean       & Predicted  & Multiple    \\
+               & Cases      & Imputation & Imputation & Imputation  \\
+\hline
+Intercept      & 0.6567***  & 0.8490***  & 0.6567***  & 0.7089***   \\
+               & (0.1301)   & (0.1029)   & (0.0991)   & (0.1133)    \\
+hgc ($\hat{\beta}_1$) & 0.0624*** & 0.0497*** & 0.0624*** & 0.0590*** \\
+               & (0.0054)   & (0.0043)   & (0.0042)   & (0.0048)    \\
+college        & $-$0.1452*** & $-$0.1682*** & $-$0.1452*** & $-$0.1250*** \\
+               & (0.0345)   & (0.0257)   & (0.0247)   & (0.0283)    \\
+tenure         & 0.0495***  & 0.0382***  & 0.0495***  & 0.0498***   \\
+               & (0.0052)   & (0.0039)   & (0.0037)   & (0.0043)    \\
+tenure$^2$     & $-$0.0016*** & $-$0.0013*** & $-$0.0016*** & $-$0.0016*** \\
+               & (0.0003)   & (0.0002)   & (0.0002)   & (0.0002)    \\
+age            & 0.0004     & 0.0002     & 0.0004     & 0.0002      \\
+               & (0.0027)   & (0.0022)   & (0.0021)   & (0.0024)    \\
+married        & 0.0220     & 0.0268**   & 0.0220*    & 0.0143      \\
+               & (0.0177)   & (0.0136)   & (0.0131)   & (0.0150)    \\
+$R^2$          & 0.2084     & 0.1473     & 0.2767     & 0.2158      \\
+$N$            & 1669       & 2229       & 2229       & 2229        \\
+\hline
+\multicolumn{5}{l}{\small Standard errors in parentheses.\
+  $^*p<0.10$,\ $^{**}p<0.05$,\ $^{***}p<0.01$}
+\end{tabular}
+\end{table}
+
+\noindent\textbf{Discussion of $\hat{\beta}_1$ across models:}
+
+All four estimates of $\hat{\beta}_1$ fall below the true value of 0.093,
+consistent with MNAR: lower-wage observations are missing
+disproportionately, compressing the observed variation in log wages and
+attenuating the estimated returns to schooling.
+
+\textbf{Complete cases (0.0624):} Dropping missing observations yields a
+$\hat{\beta}_1$ notably below the true value. Because low-wage workers are
+more likely to be missing, the MNAR pattern pulls the estimate downward.
+
+\textbf{Mean imputation (0.0497):} The lowest estimate among the four
+methods. Replacing every missing value with the same constant artificially
+compresses the variance of the dependent variable, attenuating all slope
+coefficients toward zero. Mean imputation is generally a poor strategy
+and should be avoided.
+
+\textbf{Predicted value imputation (0.0624):} Identical to the
+complete-cases estimate, as expected---the imputed values are exactly the
+fitted values from that regression, so OLS recovers the same coefficients.
+The standard errors are artificially small because residual variance is
+understated.
+
+\textbf{Multiple imputation (0.0590):} The closest estimate to the true
+value among the four methods. By adding stochastic noise to imputed
+values, MI restores variance in the dependent variable and produces more
+credible standard errors via Rubin's rules. Despite the MNAR nature of
+the data, MI performs best in practice and is the preferred approach.
+
+Overall, the results illustrate the classic attenuation bias from poorly
+handling missing data. Mean imputation is clearly the worst strategy;
+multiple imputation is the most reliable.
+
+\section*{Question 8: Project Progress}
+
+For my final project, I am using \textbf{Compustat firm financials data},
+which contains annual accounting and financial information for publicly
+traded U.S.\ firms, including variables such as total assets, revenues,
+capital expenditures, leverage, and profitability measures across a long
+panel of firms and years.
+
+My primary modeling approach will be \textbf{Ordinary Least Squares
+(OLS)} regression to examine the relationship between key firm financial
+characteristics and outcomes of interest such as investment or firm
+growth. Depending on the structure of the data, I may also explore panel
+fixed effects specifications to control for time-invariant firm
+heterogeneity.
+
+\end{document}
