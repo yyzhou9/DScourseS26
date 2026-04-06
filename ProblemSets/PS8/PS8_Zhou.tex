@@ -1,0 +1,137 @@
+\documentclass[12pt]{article}
+\usepackage[margin=1in]{geometry}
+\usepackage{amsmath, amssymb}
+\usepackage{booktabs}
+\usepackage{hyperref}
+\usepackage{graphicx}
+\usepackage{listings}
+\usepackage{xcolor}
+
+\title{Problem Set 8: Matrix Algebra, OLS, and Optimization}
+\author{Yeyang Zhou}
+\date{April 6, 2026}
+
+\begin{document}
+\maketitle
+
+\section*{Overview}
+
+This problem set explores multiple approaches to computing OLS estimates: the closed-form analytical solution, gradient descent, two numerical optimization algorithms (L-BFGS-B and Nelder-Mead), and maximum likelihood estimation. All computations are performed in Python using \texttt{numpy}, \texttt{scipy}, and \texttt{statsmodels}.
+
+\section*{Q4: Data Generation}
+
+I generate a dataset with $N = 100{,}000$ observations and $K = 10$ parameters using \texttt{numpy.random.seed(100)}. The design matrix $X$ is $N \times K$, where the first column is a vector of ones (intercept) and the remaining nine columns are drawn from $\mathcal{N}(0,1)$. The error vector $\varepsilon \sim \mathcal{N}(0, \sigma^2)$ with $\sigma = 0.5$. The true parameter vector is:
+\[
+\beta = \begin{bmatrix} 1.5 & -1 & -0.25 & 0.75 & 3.5 & -2 & 0.5 & 1 & 1.25 & 2 \end{bmatrix}'
+\]
+The outcome is generated as $Y = X\beta + \varepsilon$.
+
+\section*{Q5: Closed-Form OLS}
+
+The OLS estimator is computed analytically as:
+\[
+\hat{\beta}_{\text{OLS}} = (X'X)^{-1}X'Y
+\]
+using \texttt{numpy.linalg.solve} for numerical stability. The estimates are shown in Table~\ref{tab:comparison}. The maximum absolute deviation from the true $\beta$ is 0.0023, which is very small given that sampling variability is expected at finite $N$.
+
+\section*{Q6: Gradient Descent}
+
+The OLS loss function is $\mathcal{L}(\beta) = \frac{1}{2}\|Y - X\beta\|^2$, whose gradient is:
+\[
+\nabla_\beta \mathcal{L} = -X'(Y - X\beta)
+\]
+Starting from $\beta^{(0)} = \mathbf{0}$, I iterate the update rule:
+\[
+\beta^{(t+1)} = \beta^{(t)} - \alpha \cdot \nabla_\beta \mathcal{L}(\beta^{(t)})
+\]
+with learning rate $\alpha = 3 \times 10^{-7}$ for 10{,}000 iterations. The algorithm converges to essentially the same solution as the closed-form estimator (max absolute difference: 0.0023).
+
+\section*{Q7: L-BFGS-B and Nelder-Mead}
+
+I minimize the OLS objective using two algorithms from \texttt{scipy.optimize.minimize}:
+
+\begin{itemize}
+    \item \textbf{L-BFGS-B}: A quasi-Newton method that uses gradient information. It converges quickly and recovers the closed-form OLS estimates exactly.
+    \item \textbf{Nelder-Mead}: A derivative-free simplex method. Despite not using gradients, it also converges to the same solution (max absolute difference: 0.0023).
+\end{itemize}
+
+Both methods yield identical estimates, confirming that the OLS problem has a unique global minimum. L-BFGS-B is substantially faster due to its use of gradient information; Nelder-Mead is slower but demonstrates that gradient-free methods can still be effective here.
+
+\section*{Q8: MLE via L-BFGS-B}
+
+Assuming $\varepsilon \sim \mathcal{N}(0, \sigma^2)$, the log-likelihood is:
+\[
+\ell(\beta, \sigma) = -\frac{N}{2}\log(2\pi\sigma^2) - \frac{1}{2\sigma^2}\|Y - X\beta\|^2
+\]
+I minimize the negative log-likelihood over $\theta = (\beta', \sigma)'$ using L-BFGS-B with the gradient:
+\[
+\frac{\partial (-\ell)}{\partial \beta} = -\frac{X'(Y - X\beta)}{\sigma^2}, \quad
+\frac{\partial (-\ell)}{\partial \sigma} = \frac{N}{\sigma} - \frac{\|Y-X\beta\|^2}{\sigma^3}
+\]
+The MLE estimates of $\beta$ are identical to OLS (as theory predicts under normality), and $\hat{\sigma}_{\text{MLE}} = 0.4991$, very close to the true $\sigma = 0.5$.
+
+\section*{Q9: statsmodels OLS and Coefficient Comparison}
+
+I use \texttt{statsmodels.api.OLS} with no constant added (the intercept is already the first column of $X$), equivalent to \texttt{lm(Y \textasciitilde\ X - 1)} in R. The regression output is shown below.
+
+\begin{table}[ht]
+\centering
+\caption{statsmodels OLS Regression Results}
+\label{tab:ols}
+\begin{tabular}{lrrrr}
+\toprule
+Variable & Coef. & Std. Err. & $t$-stat & $p$-value \\
+\midrule
+$\beta_1$ (const) & 1.4991 & 0.002 & 949.72 & 0.000 \\
+$\beta_2$         & $-$0.9991 & 0.002 & $-$630.61 & 0.000 \\
+$\beta_3$         & $-$0.2494 & 0.002 & $-$157.55 & 0.000 \\
+$\beta_4$         & 0.7490 & 0.002 & 473.94 & 0.000 \\
+$\beta_5$         & 3.4992 & 0.002 & 2212.52 & 0.000 \\
+$\beta_6$         & $-$1.9984 & 0.002 & $-$1267.38 & 0.000 \\
+$\beta_7$         & 0.4992 & 0.002 & 315.24 & 0.000 \\
+$\beta_8$         & 0.9977 & 0.002 & 631.12 & 0.000 \\
+$\beta_9$         & 1.2520 & 0.002 & 791.96 & 0.000 \\
+$\beta_{10}$      & 1.9977 & 0.002 & 1264.03 & 0.000 \\
+\midrule
+$N$ & \multicolumn{4}{l}{100,000} \\
+$R^2$ & \multicolumn{4}{l}{0.990} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+Table~\ref{tab:comparison} compares all estimation methods side by side.
+
+\begin{table}[ht]
+\centering
+\caption{Comparison of $\hat{\beta}$ Across Estimation Methods}
+\label{tab:comparison}
+\begin{tabular}{lrrrrrr}
+\toprule
+& True $\beta$ & Closed-Form & Gradient Desc. & L-BFGS-B & Nelder-Mead & MLE \\
+\midrule
+$\beta_1$  &  1.5000 &  1.4991 &  1.4991 &  1.4991 &  1.4991 &  1.4991 \\
+$\beta_2$  & $-$1.0000 & $-$0.9991 & $-$0.9991 & $-$0.9991 & $-$0.9991 & $-$0.9991 \\
+$\beta_3$  & $-$0.2500 & $-$0.2494 & $-$0.2494 & $-$0.2494 & $-$0.2494 & $-$0.2494 \\
+$\beta_4$  &  0.7500 &  0.7490 &  0.7490 &  0.7490 &  0.7490 &  0.7490 \\
+$\beta_5$  &  3.5000 &  3.4992 &  3.4992 &  3.4992 &  3.4992 &  3.4992 \\
+$\beta_6$  & $-$2.0000 & $-$1.9984 & $-$1.9984 & $-$1.9984 & $-$1.9984 & $-$1.9984 \\
+$\beta_7$  &  0.5000 &  0.4992 &  0.4992 &  0.4992 &  0.4992 &  0.4992 \\
+$\beta_8$  &  1.0000 &  0.9977 &  0.9977 &  0.9977 &  0.9977 &  0.9977 \\
+$\beta_9$  &  1.2500 &  1.2520 &  1.2520 &  1.2520 &  1.2520 &  1.2520 \\
+$\beta_{10}$ &  2.0000 &  1.9977 &  1.9977 &  1.9977 &  1.9977 &  1.9977 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection*{How Close Are the Estimates to Ground Truth?}
+
+All five methods produce virtually identical estimates and recover the true $\beta$ with high accuracy. The maximum absolute deviation across all coefficients and all methods is just \textbf{0.0023}, and all deviations are well within the 95\% confidence intervals reported by \texttt{statsmodels} (standard errors $\approx 0.002$). This is expected: with $N = 100{,}000$ observations, OLS is highly precise, and any deviation from the true $\beta$ reflects sampling variability from $\varepsilon$ rather than estimation error.
+
+Three key observations emerge:
+\begin{enumerate}
+    \item The closed-form solution, gradient descent, both optimization algorithms, and MLE all converge to the same $\hat{\beta}$, confirming that the OLS problem has a unique global minimum.
+    \item The MLE estimate of $\sigma$ ($\hat{\sigma} = 0.4991$) is very close to the true value $\sigma = 0.5$, validating the data-generating process.
+    \item The $R^2 = 0.990$ indicates that the linear model explains nearly all of the variation in $Y$, consistent with a signal-to-noise ratio of $\text{Var}(X\beta)/\text{Var}(\varepsilon) = \text{large}/0.25$.
+\end{enumerate}
+
+\end{document}
