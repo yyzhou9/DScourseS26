@@ -1,0 +1,93 @@
+\documentclass[12pt]{article}
+\usepackage[margin=1in]{geometry}
+\usepackage{amsmath}
+\usepackage{amssymb}
+\usepackage{booktabs}
+\usepackage{hyperref}
+\usepackage{setspace}
+\usepackage{parskip}
+
+\title{Problem Set 9: LASSO, Ridge Regression, and Elastic Net}
+\author{Yeyang Zhou}
+\date{April 14, 2026}
+
+\begin{document}
+\maketitle
+\onehalfspacing
+
+\section*{Overview}
+
+This problem set applies penalized regression methods---LASSO and ridge regression---to predict log median housing values using the UCI Housing dataset. The penalty parameter $\lambda$ is tuned via 6-fold cross-validation, and model performance is evaluated using root mean squared error (RMSE).
+
+The general objective function is:
+\[
+\min_{\beta,\lambda,\alpha} \frac{1}{N}\sum_{i=1}^{N}(y_i - \hat{y}_i)^2 + \lambda\left(\alpha\sum_k|\beta_k| + (1-\alpha)\sum_k\beta_k^2\right)
+\]
+where $\alpha = 1$ gives the LASSO, $\alpha = 0$ gives ridge regression, and $\alpha \in (0,1)$ gives elastic net.
+
+\section*{Q7: Data Dimensions}
+
+The original UCI Housing dataset contains 506 observations and 13 predictor variables (plus \texttt{medv} as the outcome). After the 75/25 train-test split, the training set contains 379 observations and the test set contains 127 observations.
+
+After applying the \texttt{recipe()} pipeline---which converts \texttt{chas} to a factor (then to a dummy variable), computes 6th-degree polynomials for each of the 12 continuous predictors, and adds linear interaction terms---the number of predictor columns in the training data expands to \textbf{74}. The original dataset had 13 predictor variables, so the recipe adds \textbf{61} additional $X$ variables.
+
+\section*{Q8: LASSO Model}
+
+The LASSO model ($\alpha = 1$) was estimated by tuning $\lambda$ over a grid of 100 values (on a log$_{10}$ scale from $10^{-6}$ to $10^{1}$) using 6-fold cross-validation, selecting the value that minimized cross-validation RMSE.
+
+\begin{table}[h]
+\centering
+\caption{LASSO Results}
+\begin{tabular}{lc}
+\toprule
+\textbf{Quantity} & \textbf{Value} \\
+\midrule
+Optimal $\lambda$ & 0.039442 \\
+In-sample RMSE    & 0.2016 \\
+Out-of-sample RMSE & 0.1917 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+The LASSO's variable selection property shrinks many coefficients exactly to zero, retaining only the most predictive features. Notably, the out-of-sample RMSE is slightly \textit{lower} than the in-sample RMSE, which suggests the model generalizes well and is not overfit.
+
+\section*{Q9: Ridge Regression Model}
+
+Ridge regression ($\alpha = 0$) was estimated using the same 6-fold cross-validation framework over the same grid of $\lambda$ values.
+
+\begin{table}[h]
+\centering
+\caption{Ridge Regression Results}
+\begin{tabular}{lc}
+\toprule
+\textbf{Quantity} & \textbf{Value} \\
+\midrule
+Optimal $\lambda$ & 1.6681 \\
+In-sample RMSE    & 0.2638 \\
+Out-of-sample RMSE & 0.2432 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+The optimal $\lambda$ for ridge regression is considerably larger than for LASSO, reflecting ridge's tendency to require stronger shrinkage to manage the correlation among the polynomial and interaction features.
+
+\section*{Q10: Discussion}
+
+\subsection*{Can We Estimate OLS When There Are More Columns Than Rows?}
+
+No. Ordinary least squares (OLS) requires the design matrix $X$ to have full column rank, which is impossible when the number of predictors $p$ exceeds the number of observations $n$. When $p > n$, the matrix $X^\top X$ is singular and non-invertible, so the OLS estimator $\hat{\beta} = (X^\top X)^{-1}X^\top y$ does not exist. This is precisely why penalized methods like LASSO and ridge regression are valuable in high-dimensional settings: by adding a penalty term, they regularize the problem and produce a unique solution even when $p \gg n$.
+
+In our case, while 74 predictors does not exceed the 379 training observations, the recipe is designed to illustrate this principle. If we had used a higher polynomial degree or included all pairwise interactions, $p$ would quickly exceed $n$, making OLS infeasible.
+
+\subsection*{Bias-Variance Tradeoff}
+
+Comparing the two models:
+
+\begin{itemize}
+    \item \textbf{LASSO} achieves a lower out-of-sample RMSE (0.1917) than ridge (0.2432), making it the better-performing model on unseen data. Its hard variable selection zeros out irrelevant coefficients, effectively reducing model complexity and variance.
+    \item \textbf{Ridge} has a higher in-sample RMSE (0.2638) and higher out-of-sample RMSE (0.2432) than LASSO. Because ridge keeps all predictors with non-zero (though shrunken) coefficients, it retains more noise from the polynomial and interaction terms.
+\end{itemize}
+
+In terms of the bias-variance tradeoff, LASSO operates at a higher-bias, lower-variance point relative to a saturated OLS model, and in this setting it outperforms ridge. This is consistent with the intuition that many of the 74 engineered features are not truly informative, so zeroing them out (LASSO) is preferable to merely shrinking them (ridge). Both models benefit from regularization relative to unpenalized OLS, which would likely overfit considerably given the large number of polynomial and interaction features.
+
+\end{document}
