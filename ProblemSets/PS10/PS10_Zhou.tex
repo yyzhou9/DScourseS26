@@ -1,0 +1,73 @@
+\documentclass[12pt]{article}
+\usepackage[margin=1in]{geometry}
+\usepackage{booktabs}
+\usepackage{amsmath}
+\usepackage{hyperref}
+\usepackage{parskip}
+
+\title{Problem Set 10\\
+       \large Econ 5253: Data Science for Economists}
+\author{Yeyang Zhou}
+\date{April 21, 2026}
+
+\begin{document}
+\maketitle
+
+\section*{Overview}
+
+This problem set compares five machine learning classifiers---logistic regression (with LASSO penalty), decision trees, neural networks, $k$-nearest neighbors (kNN), and support vector machines (SVM)---in their ability to predict whether an individual earns more than \$50{,}000 per year, using the UCI Adult Income dataset. All models were tuned via 3-fold cross-validation on 80\% of the data, with out-of-sample accuracy evaluated on the held-out 20\% test set.
+
+\section*{Data}
+
+The UCI Adult Income dataset contains demographic and employment features including age, education, marital status, occupation, race, sex, hours worked per week, and capital gains/losses. After removing rows with missing values and dropping the survey weight variable (\texttt{fnlwgt}), the cleaned dataset contains approximately 45,000 observations. The binary outcome variable \texttt{high.earner} equals 1 if income exceeds \$50K and 0 otherwise.
+
+\section*{Methodology}
+
+All categorical predictors were first assigned a novel level to handle unseen categories in the test set, then converted to dummy variables. Numeric predictors were normalized to zero mean and unit variance, and zero-variance predictors were removed. No further feature engineering was applied. A random 80/20 train/test split was used (stratified by outcome), and 3-fold cross-validation was performed on the training set to select optimal hyperparameters by maximizing accuracy.
+
+The five model families and their tuned hyperparameters are:
+
+\begin{enumerate}
+    \item \textbf{Logistic Regression} (\texttt{glmnet}): LASSO penalty $\lambda$ selected from a regular grid of 50 values.
+    \item \textbf{Decision Tree} (\texttt{rpart}): minimum node size (\texttt{min\_n} $\in \{10, 30, 50\}$), maximum tree depth (\texttt{tree\_depth} $\in \{5, 12, 20\}$), and cost-complexity parameter (\texttt{cost\_complexity} $\in \{0.001, 0.1, 0.2\}$).
+    \item \textbf{Neural Network} (\texttt{nnet}): number of hidden units (\texttt{hidden\_units} $\in \{1, 5, 10\}$) and weight-decay penalty $\in \{0.0001, 0.01, 0.1\}$.
+    \item \textbf{$k$-Nearest Neighbors} (\texttt{kknn}): number of neighbors (\texttt{neighbors} $\in \{1, 5, 10, 15, 20, 25, 30\}$).
+    \item \textbf{SVM with RBF Kernel} (\texttt{kernlab}): fixed at \texttt{cost}$=1$, $\sigma=0.25$.
+\end{enumerate}
+
+\section*{Results}
+
+Table~\ref{tab:results} reports the optimal hyperparameter values and the out-of-sample accuracy on the test set for each algorithm.
+
+\begin{table}[h!]
+\centering
+\caption{Optimal Hyperparameters and Out-of-Sample Accuracy}
+\label{tab:results}
+\begin{tabular}{llc}
+\toprule
+\textbf{Algorithm} & \textbf{Optimal Hyperparameters} & \textbf{Test Accuracy} \\
+\midrule
+Logistic Regression (LASSO) & $\lambda = 0.00222$ & 0.8473 \\
+Decision Tree               & \texttt{min\_n}$=10$, \texttt{depth}$=5$, \texttt{cp}$=1.0023$ & 0.7510 \\
+Neural Network              & \texttt{hidden\_units}$=5$, $\lambda=0.1$ & 0.8427 \\
+$k$-Nearest Neighbors       & \texttt{neighbors}$=30$ & 0.8308 \\
+SVM (RBF Kernel)            & \texttt{cost}$=1$, $\sigma=0.25$ & 0.8177 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\section*{Discussion}
+
+The five algorithms produced varying levels of out-of-sample classification accuracy on the Adult Income dataset. Logistic regression with LASSO regularization achieved the highest test accuracy at 84.73\%, suggesting that the income classification problem has a strong linear structure that a regularized linear model can capture effectively. The optimal penalty $\lambda = 0.00222$ is quite small, indicating that most features contribute meaningfully to the prediction and little shrinkage was needed.
+
+The decision tree performed worst among the five algorithms, with a test accuracy of 75.10\%. The optimal tree has a depth of only 5 and a relatively large cost-complexity parameter, resulting in an aggressively pruned tree that likely underfits the data. This suggests that a single shallow tree struggles to capture the nonlinear interactions present in the income data.
+
+The neural network with 5 hidden units and a weight-decay penalty of 0.1 achieved a test accuracy of 84.27\%, very close to logistic regression. The moderate penalty prevents overfitting while the hidden layer allows the model to capture some nonlinearity beyond what logistic regression can represent.
+
+The kNN classifier with 30 neighbors achieved 83.08\% accuracy. The optimal choice of a large $k$ suggests that the decision boundary is relatively smooth, and averaging over many neighbors reduces variance at the cost of some bias. Smaller values of $k$ likely overfit to local noise in this dataset.
+
+Finally, the SVM with RBF kernel achieved 81.77\% accuracy with \texttt{cost}$=1$ and $\sigma=0.25$. The SVM maps features into a high-dimensional space and finds a maximum-margin hyperplane; the moderate cost parameter allows some misclassification in exchange for a wider margin.
+
+Overall, the results suggest that the income classification task is well-suited to linear methods, with logistic regression outperforming more complex nonlinear alternatives. The decision tree is the clear underperformer, likely due to its inability to combine multiple weak splits as effectively as ensemble methods would.
+
+\end{document}
