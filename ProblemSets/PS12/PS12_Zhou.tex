@@ -1,0 +1,181 @@
+\documentclass[12pt,english]{article}
+\usepackage{mathptmx}
+\usepackage[top=1in, bottom=1in, left=1in, right=1in]{geometry}
+\usepackage{amsmath,amstext,amssymb}
+\usepackage{setspace}
+\usepackage{booktabs}
+\usepackage{graphicx}
+\usepackage[english]{babel}
+\usepackage[unicode=true,pdfusetitle,
+ bookmarks=true,colorlinks,citecolor=black,filecolor=black,
+ linkcolor=black,urlcolor=black]{hyperref}
+
+% modelsummary / tinytable / datasummary_skim preamble
+\usepackage{tabularray}
+\usepackage{float}
+\usepackage{codehigh}
+\usepackage[normalem]{ulem}
+\UseTblrLibrary{booktabs}
+\UseTblrLibrary{siunitx}
+\newcommand{\tinytableTabularrayUnderline}[1]{\underline{#1}}
+\newcommand{\tinytableTabularrayStrikeout}[1]{\sout{#1}}
+\NewTableCommand{\tinytableDefineColor}[3]{\definecolor{#1}{#2}{#3}}
+
+\title{Problem Set 11\\ Econ 5253 -- Spring 2026}
+\author{Yeyang Zhou}
+\date{April 27, 2026}
+
+\begin{document}
+
+\maketitle
+
+\section*{Question 6: Summary Statistics}
+
+\input{datasummary.tex}
+
+The summary statistics make sense for a sample of working women in 1988.
+Mean years of schooling \texttt{hgc} is around the high-school-plus-some-college
+range, and \texttt{exper} averages a moderate number of years on the
+current job. Roughly 20\% of the sample is in a union job, around 60\%
+are married, and roughly half have at least one child living at home.
+
+The missing rate of \texttt{logwage} is \textbf{30.7\%}. Given the
+sample is restricted to women already known to be working, the
+missingness is most likely \textbf{Missing Not At Random (MNAR)} or at
+best Missing At Random (MAR): wages are most likely missing for women
+whose wage outcomes are systematically related to unobserved factors
+(e.g., women who work informally or report wages selectively). The
+selection problem is exactly what the Heckman model in Q7 is designed
+to address.
+
+\section*{Question 7: Imputation Methods and Returns to Schooling}
+
+I estimate
+\begin{equation}
+\label{eq:wage}
+\log wage_i = \beta_0 + \beta_1 hgc_i + \beta_2 union_i
+            + \beta_3 college_i + \beta_4 exper_i
+            + \beta_5 exper_i^2 + \eta_i
+\end{equation}
+under three approaches to handling missing \texttt{logwage}:
+(i) listwise deletion (complete cases), (ii) mean imputation, and
+(iii) Heckman two-step selection.
+
+\input{regtable.tex}
+
+The coefficient of interest $\beta_1$ (returns to schooling, true value
+0.091) takes the following values:
+
+\begin{center}
+\begin{tabular}{lc}
+\toprule
+Method & $\hat{\beta}_1$ \\
+\midrule
+Complete cases & 0.0590 \\
+Mean imputation & 0.0363 \\
+Heckman 2-step & 0.0915 \\
+\midrule
+True value & 0.0910 \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\textbf{Discussion.} Complete-cases regression underestimates the true
+returns to schooling at 0.059, because the missing observations are
+non-random and listwise deletion drops them in a way that biases the
+remaining sample. Mean imputation performs the worst at 0.036; filling
+in missing values with the unconditional mean compresses the variance
+of $\log wage$ and attenuates the slope on \texttt{hgc} toward zero.
+The Heckman two-step estimator recovers $\hat{\beta}_1 = 0.0915$,
+essentially the true value. By explicitly modeling the selection
+equation (the probability of observing a wage as a function of
+\texttt{married} and \texttt{kids}, in addition to the wage covariates),
+Heckman corrects for the non-random nature of the missingness and
+delivers a consistent estimate.
+
+The pattern confirms the standard ordering of these methods under
+non-random missingness: mean imputation is the worst, complete-cases
+is biased but not catastrophic, and a properly-specified selection
+model is best when an exclusion restriction is available.
+
+\section*{Question 8: Probit Model of Union Job Preference}
+
+The probit model
+$$ u_i = \alpha_0 + \alpha_1 hgc_i + \alpha_2 college_i + \alpha_3 exper_i
+       + \alpha_4 married_i + \alpha_5 kids_i + \varepsilon_i $$
+yields the following estimates:
+
+\begin{center}
+\begin{tabular}{lcccc}
+\toprule
+Variable & Estimate & Std.\ Error & $z$ & $p$ \\
+\midrule
+(Intercept) & $-$6.743 & 0.804 & $-$8.39 & $<0.001$ \\
+\texttt{hgc}     & $-$1.009 & 0.098 & $-$10.34 & $<0.001$ \\
+\texttt{college} &    0.397 & 0.427 &    0.93 & 0.352 \\
+\texttt{exper}   &    1.849 & 0.156 &   11.86 & $<0.001$ \\
+\texttt{married} &    0.588 & 0.206 &    2.86 & 0.004 \\
+\texttt{kids}    &    0.799 & 0.202 &    3.96 & $<0.001$ \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\section*{Question 9: Counterfactual Policy}
+
+I simulate a policy in which there is no preference or penalty to wives
+or mothers for working in union jobs by setting the coefficients on
+\texttt{married} and \texttt{kids} to zero and recomputing predicted
+probabilities. The results are:
+
+\begin{center}
+\begin{tabular}{lc}
+\toprule
+ & Avg.\ $P(\text{union})$ \\
+\midrule
+Baseline                 & 0.2373 \\
+Counterfactual ($\alpha_4 = \alpha_5 = 0$) & 0.2174 \\
+\midrule
+Difference                                  & $-$0.0199 \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+Removing the marriage and kids effects lowers the average predicted
+probability of holding a union job by about 2 percentage points. This
+indicates that, in the estimated model, being married and having kids
+\emph{raises} the probability of union employment, so removing those
+effects mechanically lowers it.
+
+\paragraph{Is the model realistic?}
+No. Several features of the estimates raise concerns:
+
+\begin{enumerate}
+  \item The coefficient on \texttt{hgc} is $-1.009$, implying that one
+        additional year of schooling \emph{decreases} the latent utility
+        of union employment by an enormous amount. This is implausibly
+        large in magnitude and likely the wrong sign---empirically,
+        union membership in the late 1980s was concentrated among
+        workers with moderate education, not strongly negatively related
+        to schooling at this magnitude.
+  \item The coefficient on \texttt{exper} is $+1.849$, which is also
+        implausibly large in absolute value for a probit model.
+  \item R issued the warning ``fitted probabilities numerically 0 or 1
+        occurred,'' which is a classic symptom of separation or near
+        separation in the data and a signal that the model is
+        numerically unstable.
+  \item The model omits demand-side variables (industry, occupation,
+        geography) that drive union availability. With those omitted,
+        the coefficients on individual characteristics absorb correlated
+        omitted-variable effects.
+\end{enumerate}
+
+The counterfactual is therefore best read as descriptive: it tells us
+how the average predicted probability would change if the
+\texttt{married} and \texttt{kids} coefficients were zeroed out
+\emph{within this particular fitted model}, not as a credible estimate
+of how a real-world policy would change union participation. A more
+defensible model would include industry/occupation controls and would
+not produce coefficients of magnitude greater than one on continuous
+covariates.
+
+\end{document}
