@@ -1,0 +1,280 @@
+\documentclass[aspectratio=169]{beamer}
+
+% ---------------------------
+% Madrid theme + OU Crimson
+% ---------------------------
+\usetheme{Madrid}
+\setbeamertemplate{navigation symbols}{}
+
+\definecolor{OUcrimson}{RGB}{140,28,45}
+\usecolortheme[named=OUcrimson]{structure}
+
+% Make the title/footer blocks use OU red explicitly
+\setbeamercolor{palette primary}{bg=OUcrimson,fg=white}
+\setbeamercolor{palette secondary}{bg=OUcrimson!80!black,fg=white}
+\setbeamercolor{palette tertiary}{bg=OUcrimson!60!black,fg=white}
+\setbeamercolor{titlelike}{bg=OUcrimson,fg=white}
+\setbeamercolor{frametitle}{bg=OUcrimson,fg=white}
+
+% Paint the frametitle bar in OU red (Madrid alone does NOT do this).
+% AtBeginDocument forces this template to win over Madrid's inner-theme override.
+\AtBeginDocument{%
+  \setbeamertemplate{frametitle}{%
+    \nointerlineskip
+    \begin{beamercolorbox}[wd=\paperwidth,leftskip=0.5cm,rightskip=0.5cm,ht=3.2ex,dp=1.4ex]{frametitle}%
+      \usebeamerfont{frametitle}\insertframetitle%
+    \end{beamercolorbox}%
+  }%
+}
+
+% Classic Beamer triangle bullets
+\setbeamertemplate{itemize items}[triangle]
+
+% ---------------------------
+% Packages
+% ---------------------------
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage{booktabs}
+\usepackage{amsmath}
+\usepackage{bm}
+
+% ---------------------------
+% Title information
+% ---------------------------
+\title[HC Disclosure and ERC]{Human Capital Disclosure and Earnings Response:\\Evidence from SEC Regulation S-K}
+\subtitle{Final Project Presentation}
+\author{Yeyang Zhou}
+\institute[OU]{Econ 5253: Data Science for Economists\\University of Oklahoma}
+\date{\today}
+
+\begin{document}
+
+% =========================================================
+% SLIDE 1: Title
+% =========================================================
+\begin{frame}
+  \titlepage
+\end{frame}
+
+% =========================================================
+% SLIDE 2: Introduction
+% =========================================================
+\begin{frame}{Introduction}
+
+\textbf{Research question.} Do firms with greater \textit{pre-mandate} human capital
+disclosure (HCD) experience a larger increase in their earnings response coefficient
+(ERC) after the SEC's 2020 mandate?
+
+\vspace{4pt}
+
+\begin{beamercolorbox}[sep=4pt,rounded=true]{block body}
+{\footnotesize \textbf{ERC --- a quick gloss.}\\[2pt]
+\textit{Conceptually:} how strongly the stock market revises its valuation
+when a firm announces earnings. High ERC $\Rightarrow$ investors treat
+earnings as an informative, credible signal of firm value; low ERC $\Rightarrow$
+earnings move prices little (noisy, or already known).\\[2pt]
+\textit{Operationally:} the slope $\beta$ in
+$\text{Return} = \alpha + \beta \cdot \text{Earnings surprise} + \varepsilon$.}
+\end{beamercolorbox}
+
+\vspace{2pt}
+
+\textbf{Background.}
+\begin{itemize}
+  \item Pre-2020: SEC required only employee \textit{headcount} in 10-Ks (checklist regime).
+  \item Nov 2020 --- Reg S-K Item 101(c) shifts to a \textit{principles-based} regime:
+        firms must describe ``human capital resources'' material to their business.
+  \item No specific metrics prescribed $\Rightarrow$ wide cross-sectional variation
+        in disclosure depth across firms.
+\end{itemize}
+
+\end{frame}
+
+% =========================================================
+% SLIDE 3: Disclosure Examples
+% =========================================================
+\begin{frame}{Disclosure Examples: Same Mandate, Different Responses}
+
+{\scriptsize Excerpts from FY2021--2025 10-K Item 1, ``Human Capital'' section.}
+
+\vspace{4pt}
+
+\begin{columns}[T]
+
+% --- Low ---
+\begin{column}{0.32\textwidth}
+\begin{beamercolorbox}[sep=4pt,rounded=true]{block body}
+{\footnotesize\bfseries\color{gray!50!black} Low Disclosure}\\[1pt]
+{\scriptsize \textit{Intercontinental Exchange} (FY2025)\\
+$hc\_intensity = 0.009$}\\[3pt]
+{\scriptsize ``\ldots we had a total of 12{,}844 employees\ldots\ less than 1\% is subject to collective bargaining agreements, and \textbf{such relations are considered to be good}\ldots''}
+\end{beamercolorbox}
+\end{column}
+
+% --- Mid ---
+\begin{column}{0.32\textwidth}
+\begin{beamercolorbox}[sep=4pt,rounded=true]{block body}
+{\footnotesize\bfseries\color{OUcrimson!70!black} Mid Disclosure}\\[1pt]
+{\scriptsize \textit{HEICO Corp.} (FY2025)\\
+$hc\_intensity = 0.017$}\\[3pt]
+{\scriptsize ``\ldots approximately 11{,}100 employees\ldots\ \textbf{Health and Safety:} striving for zero employee injuries\ldots\ \textbf{Compensation and Benefits:} market competitive total rewards programs\ldots''}
+\end{beamercolorbox}
+\end{column}
+
+% --- High ---
+\begin{column}{0.32\textwidth}
+\begin{beamercolorbox}[sep=4pt,rounded=true]{block title}
+{\footnotesize\bfseries High Disclosure}\\[1pt]
+{\scriptsize \textit{Trane Technologies} (FY2021)\\
+$hc\_intensity = 0.041$}\\[3pt]
+{\scriptsize ``\textbf{25.5\% of global employees were women}; \textbf{36.4\% U.S.\ racially/ethnically diverse}\ldots\ key talent retention \textbf{94.6\%}\ldots\ \textbf{89\% participated} in engagement survey\ldots''}
+\end{beamercolorbox}
+\end{column}
+
+\end{columns}
+
+\vspace{6pt}
+
+{\scriptsize Same mandate, very different disclosures $\Rightarrow$ \textbf{cross-sectional variation in $HCD_i$}, the source of identification.}
+
+\end{frame}
+
+% =========================================================
+% SLIDE 4: Data
+% =========================================================
+\begin{frame}{Data}
+
+\textbf{Sources}
+\begin{itemize}
+  \item \textbf{SEC EDGAR}: 10-K filings, FY2015--2024 (text)
+  \item \textbf{Compustat}: firm financials (earnings, market value)
+  \item \textbf{CRSP}: monthly returns (for buy-and-hold abnormal returns)
+\end{itemize}
+
+\textbf{Pipeline (Python)}
+\begin{enumerate}
+  \item Pull 10-K filings via the EDGAR REST API (rate-limited, locally cached).
+  \item Extract Item~1 (``Business'') with regex + iXBRL cleaning.
+  \item Tokenize; greedy phrase-match against the Demers, Wang \& Wu (2024) lexicon
+        (1{,}285 HC keywords across 5 categories).
+  \item Compute filing-level intensity:
+        $hc\_intensity_{i,t} = \frac{\text{\#\,HC keywords in Item 1}}{\text{\#\,words in Item 1}}$.
+  \item Merge with Compustat and CRSP at the firm-year level.
+\end{enumerate}
+
+\textbf{Final sample:} $\sim 33{,}000$ firm-year observations, $\sim 4{,}000$ unique firms.
+
+\end{frame}
+
+% =========================================================
+% SLIDE 4: Methods
+% =========================================================
+\begin{frame}{Methods}
+
+\textbf{Treatment exposure} (predetermined, FY2015--2019, standardized):
+\[
+HCD_i \;=\; \frac{1}{5}\sum_{t=2015}^{2019} hc\_intensity_{i,t}
+\]
+
+\textbf{Triple-interaction regression:}
+{\small
+\begin{align*}
+AR_{i,t} =\; \alpha
+&+ \beta_1\, UE_{i,t}
+\;+\; \beta_2\, Post_t \times UE_{i,t}
+\;+\; \beta_3\, HCD_i \times UE_{i,t}\\
+&+ \beta_4\, Post_t \times HCD_i
+\;+\; \boldsymbol{\beta_5\, Post_t \times HCD_i \times UE_{i,t}}\\
+&+ \mu_i + \lambda_t + \varepsilon_{i,t}
+\end{align*}}
+
+\begin{itemize}
+  \item $AR_{i,t}$: 9-month buy-and-hold market-adjusted return (3 months after FYE)
+  \item $UE_{i,t}$: earnings ($IB$) scaled by lagged market value of equity
+  \item $Post_t = \mathbb{1}[t \geq 2021]$
+  \item Firm FE $\mu_i$ + year FE $\lambda_t$; SE clustered by firm; estimated via \texttt{linearmodels.PanelOLS}
+\end{itemize}
+
+\textbf{Prediction (H1):} $\hat{\beta}_5 > 0$ --- firms with deeper pre-mandate HCD experience a larger ERC increase after the mandate.
+
+\end{frame}
+
+% =========================================================
+% SLIDE 5: Findings
+% =========================================================
+\begin{frame}{Findings}
+
+\begin{center}
+{\small
+\begin{tabular}{lcccc}
+\toprule
+ & \multicolumn{2}{c}{\textbf{Main}} & \multicolumn{2}{c}{\textbf{Excl. FY2020}} \\
+\cmidrule(lr){2-3}\cmidrule(lr){4-5}
+ & $\pm 3$ yrs & $\pm 5$ yrs & $\pm 3$ yrs & $\pm 5$ yrs \\
+\midrule
+$\beta_1$: $UE$                            & $-0.020$       & $0.039^{*}$    & $-0.069^{**}$  & $0.009$ \\
+$\beta_2$: $Post \times UE$                & $-0.104^{***}$ & $-0.127^{***}$ & $0.081^{**}$   & $-0.016$ \\
+$\beta_3$: $HCD \times UE$                 & $-0.048$       & $-0.061^{**}$  & $-0.033$       & $-0.054^{**}$ \\
+$\beta_4$: $Post \times HCD$               & $-0.042^{***}$ & $-0.032^{***}$ & $-0.029^{***}$ & $-0.023^{***}$ \\
+\midrule
+$\beta_5$: $Post \times HCD \times UE$     & $\bm{0.090^{**}}$ & $\bm{0.103^{***}}$ & $0.036$ & $\bm{0.071^{**}}$ \\
+\midrule
+$N$                                        & 17{,}554 & 25{,}392 & 14{,}998 & 22{,}836 \\
+\bottomrule
+\multicolumn{5}{l}{{\scriptsize $^{*}p<0.10$, $^{**}p<0.05$, $^{***}p<0.01$. SE clustered by firm.}}
+\end{tabular}}
+\end{center}
+
+\vspace{4pt}
+
+\begin{itemize}
+  \item $\hat{\beta}_5 > 0$ and significant in main specification (both windows).
+  \item Result \textbf{robust} to excluding FY2020 in the wider $\pm 5$-year window.
+\end{itemize}
+
+\end{frame}
+
+% =========================================================
+% SLIDE 6: Takeaways
+% =========================================================
+\begin{frame}{What did we learn? Why does it matter?}
+
+\textbf{Empirical finding}
+\begin{itemize}
+  \item Firms with deeper voluntary HCD \textit{before} the mandate experience a
+        differentially larger ERC increase \textit{after} it.
+\end{itemize}
+
+\textbf{Why it matters}
+\begin{itemize}
+  \item \textbf{Disclosure regulation design:} principles-based mandates are
+        \textit{not} neutral --- their value relevance depends on firms' prior
+        disclosure infrastructure.
+  \item \textbf{Capital markets:} voluntary disclosure becomes more informative
+        once formalized through mandatory channels (legal liability, audit).
+  \item \textbf{Policy:} informs ongoing debate around the SEC's 2022 proposal
+        to expand mandatory human-capital metrics.
+\end{itemize}
+
+\textbf{Limitations \& next steps}
+\begin{itemize}
+  \item Add firm-level controls (size, leverage, analyst coverage, IO).
+  \item Run an event-study / parallel-trends specification.
+\end{itemize}
+
+\end{frame}
+
+% =========================================================
+% SLIDE 7: Thank you
+% =========================================================
+\begin{frame}
+  \vfill
+  \begin{center}
+    {\Huge\bfseries\color{OUcrimson} Thank you!}\\[0.8cm]
+    {\large Comments and questions welcome.}
+  \end{center}
+  \vfill
+\end{frame}
+
+\end{document}
